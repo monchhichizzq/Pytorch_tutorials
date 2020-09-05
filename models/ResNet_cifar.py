@@ -82,7 +82,7 @@ class ResNet(nn.Module):
         self.layer2 = self._make_layer(block, 128, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 256, num_blocks[2], stride=2)
         self.layer4 = self._make_layer(block, 512, num_blocks[3], stride=2)
-        self.avgpool = nn.AvgPool2d(7, stride=1)
+        self.avgpool = nn.AvgPool2d(2, stride=1)
         self.linear = nn.Linear(512 * block.expansion, num_classes)
 
         for m in self.modules():
@@ -102,7 +102,7 @@ class ResNet(nn.Module):
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
-        out = self.maxpool(out)
+        #out = self.maxpool(out)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
@@ -140,4 +140,4 @@ def test():
 
 if __name__ == '__main__':
     model_resnet18 = ResNet152()
-    summary(model_resnet18, input_size=(3, 224, 224))
+    summary(model_resnet18, input_size=(3, 32, 32))

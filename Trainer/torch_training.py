@@ -10,13 +10,15 @@ import torchvision.transforms as transforms
 
 import os
 import argparse
+import numpy as np
 
-from models.ResNet import ResNet34
-from Trainer.utils import progress_bar
+from models.ResNet_cifar import *
+from torchsummary import summary
+# from Trainer.utils import progress_bar
 
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
-parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
+parser.add_argument('--lr', default=1e-2, type=float, help='learning rate')
 parser.add_argument('--resume', '-r', action='store_true',
                     help='resume from checkpoint')
 args = parser.parse_args()
@@ -41,11 +43,13 @@ transform_test = transforms.Compose([
 
 trainset = torchvision.datasets.CIFAR10(
     root='./data', train=True, download=True, transform=transform_train)
+print('Trainset: {0}'.format(trainset))
 trainloader = torch.utils.data.DataLoader(
     trainset, batch_size=128, shuffle=True, num_workers=2)
 
 testset = torchvision.datasets.CIFAR10(
     root='./data', train=False, download=True, transform=transform_test)
+print('Testset: {0}'.format(testset))
 testloader = torch.utils.data.DataLoader(
     testset, batch_size=100, shuffle=False, num_workers=2)
 
@@ -67,8 +71,11 @@ print('==> Building model..')
 # net = SENet18()
 # net = ShuffleNetV2(1)
 # net = EfficientNetB0()
-net = ResNet34()
+net = ResNet18()
 net = net.to(device)
+summary(net, input_size=(3, 32, 32))
+
+
 if device == 'cuda':
     net = torch.nn.DataParallel(net)
     cudnn.benchmark = True
@@ -107,8 +114,11 @@ def train(epoch):
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
 
-        progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                     % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+    print(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+                 % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+
+        # progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+        #              % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
 
 def test(epoch):
@@ -128,8 +138,11 @@ def test(epoch):
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
 
-            progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                         % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+        print(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+                     % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+
+            # progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+            #              % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
     # Save checkpoint.
     acc = 100.*correct/total
