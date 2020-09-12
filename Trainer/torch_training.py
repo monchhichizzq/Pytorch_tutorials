@@ -16,6 +16,8 @@ from models.ResNet_cifar import *
 from torchsummary import summary
 # from Trainer.utils import progress_bar
 
+from Trainer.utils import acc_monitoring
+
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--lr', default=1e-2, type=float, help='learning rate')
@@ -24,6 +26,7 @@ parser.add_argument('--resume', '-r', action='store_true',
 args = parser.parse_args()
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(device)
 best_acc = 0  # best test accuracy
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 
@@ -33,7 +36,7 @@ transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)), #``input[channel] = (input[channel] - mean[channel]) / std[channel]``
 ])
 
 transform_test = transforms.Compose([
@@ -45,19 +48,19 @@ trainset = torchvision.datasets.CIFAR10(
     root='./data', train=True, download=True, transform=transform_train)
 print('Trainset: {0}'.format(trainset))
 trainloader = torch.utils.data.DataLoader(
-    trainset, batch_size=128, shuffle=True, num_workers=2)
+    trainset, batch_size=128, shuffle=True)
 
 testset = torchvision.datasets.CIFAR10(
     root='./data', train=False, download=True, transform=transform_test)
 print('Testset: {0}'.format(testset))
 testloader = torch.utils.data.DataLoader(
-    testset, batch_size=100, shuffle=False, num_workers=2)
+    testset, batch_size=100, shuffle=False)
 
 classes = ('plane', 'car', 'bird', 'cat', 'deer',
            'dog', 'frog', 'horse', 'ship', 'truck')
 
 # Model
-print('==> Building model..')
+print('==> Building model..ResNet 18')
 # net = VGG('VGG19')
 # net = ResNet18()
 # net = PreActResNet18()
@@ -119,6 +122,7 @@ def train(epoch):
 
         # progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
         #              % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+    return train_loss/(batch_idx+1), 100.*correct/total
 
 
 def test(epoch):
@@ -127,7 +131,7 @@ def test(epoch):
     test_loss = 0
     correct = 0
     total = 0
-    with torch.no_grad():
+    with torch.no_grad(): # when in test stage, no grad
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = net(inputs)
@@ -157,8 +161,21 @@ def test(epoch):
             os.mkdir('checkpoint')
         torch.save(state, './checkpoint/ckpt.pth')
         best_acc = acc
+    return test_loss/(batch_idx+1), 100.*correct/total
 
-
+epochs, train_losses, train_accs, test_losses, test_accs = [], [], [], [], []
 for epoch in range(start_epoch, start_epoch+200):
-    train(epoch)
-    test(epoch)
+    train_loss, train_acc = train(epoch)
+    test_loss, test_acc = test(epoch)
+    train_losses.append(train_loss)
+    train_accs.append(train_acc)
+    test_losses.append(test_loss)
+    test_accs.append(test_acc)
+    epochs.append(epoch+1)
+
+    acc_monitoring(epochs,
+                   train_losses,
+                   test_losses,
+                   train_accs,
+                   test_accs,
+                   save_path = 'board.png')

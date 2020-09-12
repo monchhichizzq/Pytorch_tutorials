@@ -77,7 +77,7 @@ def data_generator(cifar_train, cifar_test, is_normalized = False):
     y_test = cifar_test[b'labels']
 
     x_train = x_train.reshape(-1, 32, 32, 3)
-    x_test = x_test.reshape(-1, 32, 32, 3)
+    x_test = x_test.reshape(-1,  32, 32, 3)
     class_names = cifar_train[b'label_names']
 
     # x_train = x_train.astype('float16')
@@ -85,10 +85,10 @@ def data_generator(cifar_train, cifar_test, is_normalized = False):
     if is_normalized:
         x_train = x_train / 255
         x_test = x_test / 255
-    y_train = y_train.reshape(-1, 1)
-    y_test = y_test.reshape(-1, 1)
-    print('train_data:', x_train.shape, 'test_data:', x_test.shape)
-    print('train_label:', y_train.shape, 'test_label:', y_test.shape)
+    # y_train = y_train.reshape(-1, 1)
+    # y_test = y_test.reshape(-1, 1)
+    print('train_data:', x_train.shape, 'test_data:', x_test.shape, 'min:', np.min(x_train), 'max:', np.max(x_train))
+    print('train_label:', y_train.shape, 'test_label:', y_test.shape, 'min:', np.min(x_test), 'max:', np.max(x_train))
     print('class names:', class_names)
     return x_train, x_test, y_train, y_test, class_names
 
@@ -123,6 +123,7 @@ if __name__ == '__main__':
 
 
     x_train, x_test, y_train, y_test, classnames = data_generator(cifar_train, cifar_test)
+
 
     # ouput_labels(cifar_train)
     # print(cifar_train[b'label_names'])
